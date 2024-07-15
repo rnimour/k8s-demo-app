@@ -1,0 +1,48 @@
+# create Deployment and Service for Mongo in the same file
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+  labels:
+    app: mongo
+spec:
+  replicas: 1 # database: should use StatefulSet for data consistency
+  selector:
+    matchLabels:
+      app: mongo
+  # configure the pod within the deployment
+  template:
+    metadata:
+      labels:
+          app: mongo
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:5.0.27
+          ports:
+            - containerPort: 27017
+          # read the mongoDB username and password from the secret
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret # points to mongo-secret.yaml's metadata.name
+                  key: username
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret # points to mongo-secret.yaml's metadata.name
+                  key: password
+---
+# define the Service here
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017

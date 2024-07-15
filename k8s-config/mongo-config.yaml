@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-config
+data:
+  # MongoDB connection URL, will be the service of the MongoDB Pod.
+  mongo-url: "mongo-service"

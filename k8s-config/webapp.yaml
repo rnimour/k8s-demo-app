@@ -1,0 +1,58 @@
+# create Deployment and Service for Mongo in the same file
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  labels:
+    app: webapp
+spec:
+  replicas: 1 # database: should use StatefulSet for data consistency
+  selector:
+    matchLabels:
+      app: webapp
+  # configure the pod within the deployment
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - name: webapp
+          image: nanajanashia/k8s-demo-app:v1.0
+          # TODO: make my own cool app like
+          # image: rnimour/k8s-demo-app:0.1
+          ports:
+            - containerPort: 3000
+          # read the mongoDB username and password from the secret, and the DB URL from the ConfigMap
+          env:
+            - name: USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret # points to mongo-secret.yaml's metadata.name
+                  key: username
+            - name: USER_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret # points to mongo-secret.yaml's metadata.name
+                  key: password
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mongo-config # points to mongo-config.yaml's metadata.name
+                  key: mongo-url
+---
+# define the Service here
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  type: NodePort # external service type, requires nodePort
+  selector:
+    app: webapp
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      # opens this port on Kubernetes nodes (between 30000 and 32767)
+      nodePort: 30100
